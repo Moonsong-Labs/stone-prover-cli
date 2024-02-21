@@ -2,8 +2,9 @@
 
 set -eo pipefail
 
-VERSION="v0.1.0-rc1"
+VERSION="v0.1.0"
 INSTALL_DIR="${HOME}/.stone/${VERSION}"
+TARBALL="stone-cli-linux-x86-64.tar.gz"
 
 while true; do
   case "$1" in
@@ -14,9 +15,8 @@ done
 
 echo "Installing Stone in ${INSTALL_DIR}..."
 mkdir -p "${INSTALL_DIR}"
-wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/v0.3.0/cpu_air_prover -O "${INSTALL_DIR}/cpu_air_prover"
-wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/v0.3.0/cpu_air_verifier -O "${INSTALL_DIR}/cpu_air_verifier"
-wget https://github.com/Moonsong-Labs/stone-prover-cli/releases/download/${VERSION}/stone-prover-cli -O "${INSTALL_DIR}/stone-prover-cli"
+wget https://github.com/Moonsong-Labs/stone-prover-cli/releases/download/${VERSION}/${TARBALL} -O "${INSTALL_DIR}/${TARBALL}"
+tar -xf "${INSTALL_DIR}/${TARBALL}"
 
 echo "Configuring permissions..."
 chmod +x "${INSTALL_DIR}/cpu_air_prover"

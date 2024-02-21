@@ -11,6 +11,13 @@ Features:
 
 ## Install
 
+Install dependencies. `libdw1` is required to run Stone and `wget` to download the installation script.
+
+```shell
+# For Debian/Ubuntu
+sudo apt install libdw1 wget
+```
+
 ```shell
 wget -O - https://raw.githubusercontent.com/Moonsong-Labs/stone-prover-cli/main/scripts/install-stone-cli.sh | bash
 ```
