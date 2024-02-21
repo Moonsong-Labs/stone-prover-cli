@@ -1,0 +1,18 @@
+[package]
+name = "stone-prover-cli"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+cairo-vm = { git = "https://github.com/Moonsong-Labs/cairo-vm", rev = "b2f69d230416129a84ad8237ccc13d088992f74b", features = ["extensive_hints"] }
+clap = { version = "4.5.0", features = ["derive"] }
+serde = { version = "1.0.196", features = ["derive"] }
+serde_json = { version = "1.0.113" }
+stone-prover-sdk = { git = "https://github.com/Moonsong-Labs/stone-prover-sdk", tag="v0.3.0" }
+thiserror = { version = "1.0.57" }
+
+[dev-dependencies]
+rstest = "0.18.2"
+tempfile = "3.10.0"

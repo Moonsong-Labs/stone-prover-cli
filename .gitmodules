@@ -1,0 +1,3 @@
+[submodule "dependencies/cairo-programs"]
+	path = dependencies/cairo-programs
+	url = https://github.com/Moonsong-Labs/cairo-programs.git

@@ -1,0 +1,93 @@
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - "main"
+    tags:
+      - "v*"
+  pull_request:
+    branches:
+      - "*"
+
+env:
+  CARGO_TERM_COLOR: always
+  STONE_SDK_VERSION: v0.3.0
+  STONE_INSTALL_DIR: ./dependencies/stone
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: 1.74
+          override: true
+          components: rustfmt, clippy
+
+      - name: Set up cargo cache
+        uses: actions/cache@v3
+        continue-on-error: false
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: ${{ runner.os }}-cargo-
+
+      - name: Set Stone SDK version in context
+        id: set-env-sdk-version
+        run: |
+          echo "STONE_SDK_VERSION=${STONE_SDK_VERSION}" >> $GITHUB_ENV
+          echo "STONE_INSTALL_DIR=${STONE_INSTALL_DIR}" >> $GITHUB_ENV
+
+      - name: Cache Stone prover and verifier
+        id: cache-stone
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STONE_INSTALL_DIR }}
+          key: stone-${{ runner.os }}-${{ env.STONE_SDK_VERSION }}
+
+      - name: Download Stone
+        if: steps.cache-stone.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p "${STONE_INSTALL_DIR}"
+          wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/${STONE_SDK_VERSION}/cpu_air_prover -O "${STONE_INSTALL_DIR}/cpu_air_prover"
+          wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/${STONE_SDK_VERSION}/cpu_air_verifier -O "${STONE_INSTALL_DIR}/cpu_air_verifier"
+
+      - name: Set Stone in PATH
+        run: |
+          INSTALL_DIR=$(readlink -f ${STONE_INSTALL_DIR})
+          echo "${INSTALL_DIR}" >> $GITHUB_PATH
+          chmod +x ${INSTALL_DIR}/cpu_air_prover
+          chmod +x ${INSTALL_DIR}/cpu_air_verifier
+
+      - name: Lint with Clippy
+        run: |
+          cargo clippy -- -D warnings
+
+      - name: Build
+        run: |
+          cargo build --release --verbose
+
+      - name: Run tests
+        run: |
+          cargo test --verbose
+
+      - name: Upload release artifacts
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: |
+            target/release/stone-prover-cli
