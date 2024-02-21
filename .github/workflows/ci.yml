@@ -91,3 +91,5 @@ jobs:
         with:
           files: |
             target/release/stone-prover-cli
+            ${{ env.STONE_INSTALL_DIR }}/cpu_air_prover
+            ${{ env.STONE_INSTALL_DIR }}/cpu_air_verifier
