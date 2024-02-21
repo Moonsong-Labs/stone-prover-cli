@@ -22,3 +22,6 @@ Cargo.lock
 # Stone prover and verifier
 dependencies/cpu_air_prover
 dependencies/cpu_air_verifier
+
+# Release tarballs
+*.tar.gz
