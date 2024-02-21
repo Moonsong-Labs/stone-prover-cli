@@ -2,9 +2,8 @@
 
 set -eo pipefail
 
-SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
-INSTALL_DIR="${HOME}/.stone"
+VERSION="v0.1.0-rc1"
+INSTALL_DIR="${HOME}/.stone/${VERSION}"
 
 while true; do
   case "$1" in
@@ -15,8 +14,14 @@ done
 
 echo "Installing Stone in ${INSTALL_DIR}..."
 mkdir -p "${INSTALL_DIR}"
-wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/v0.2.0/cpu_air_prover -O "${INSTALL_DIR}/cpu_air_prover"
-wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/v0.2.0/cpu_air_verifier -O "${INSTALL_DIR}/cpu_air_verifier"
+wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/v0.3.0/cpu_air_prover -O "${INSTALL_DIR}/cpu_air_prover"
+wget https://github.com/Moonsong-Labs/stone-prover-sdk/releases/download/v0.3.0/cpu_air_verifier -O "${INSTALL_DIR}/cpu_air_verifier"
+wget https://github.com/Moonsong-Labs/stone-prover-cli/releases/download/${VERSION}/stone-prover-cli -O "${INSTALL_DIR}/stone-prover-cli"
+
+echo "Configuring permissions..."
+chmod +x "${INSTALL_DIR}/cpu_air_prover"
+chmod +x "${INSTALL_DIR}/cpu_air_verifier"
+chmod +x "${INSTALL_DIR}/stone-prover-cli"
 
 # Add the tool to the PATH
 echo "Configuring PATH..."
