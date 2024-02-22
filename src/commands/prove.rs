@@ -6,6 +6,7 @@ use cairo_vm::types::errors::cairo_pie_error::CairoPieError;
 use cairo_vm::types::errors::program_errors::ProgramError;
 use cairo_vm::types::program::Program;
 use cairo_vm::vm::runners::cairo_pie::CairoPie;
+use log::{debug, info};
 use serde::Serialize;
 use stone_prover_sdk::cairo_vm::{
     extract_execution_artifacts, run_bootloader_in_proof_mode, run_in_proof_mode,
@@ -106,6 +107,8 @@ pub fn run_with_bootloader(args: ProveWithBootloaderArgs) -> Result<ExecutionArt
 }
 
 pub fn prove(command: ProveCommand) -> Result<(), RunError> {
+    debug!("preparing config files...");
+
     // Cloning here is the easiest solution to avoid borrow checks.
     let config_args = command.config().clone();
 
@@ -122,6 +125,7 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
         .map(|path| read_json_from_file(path).map_err(|e| RunError::Deserialize(path.clone(), e)))
         .transpose()?;
 
+    info!("execution in progress...");
     let execution_artifacts = match command {
         ProveCommand::Bare(args) => run_program(args)?,
         ProveCommand::WithBootloader(args) => run_with_bootloader(args)?,
@@ -133,6 +137,7 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
         last_layer_degree_bound,
     ));
 
+    info!("proving in progress...");
     let proof = run_prover(
         &execution_artifacts.public_input,
         &execution_artifacts.private_input,
@@ -141,6 +146,7 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
         &prover_config,
         &prover_parameters,
     )?;
+    info!("proving completed!");
 
     let output_file = config_args.output_file();
     write_json_to_file(proof, output_file.as_ref())
