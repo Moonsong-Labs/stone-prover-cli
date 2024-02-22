@@ -1,10 +1,13 @@
-use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
-use clap::Parser;
-use stone_prover_sdk::cairo_vm::ExecutionError;
-use stone_prover_sdk::error::VerifierError;
-
 use crate::cli::Cli;
 use crate::commands::prove::RunError;
+use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
+use clap::Parser;
+use env_logger::fmt::Formatter;
+use log::{error, LevelFilter, Record};
+use std::io;
+use std::io::Write;
+use stone_prover_sdk::cairo_vm::ExecutionError;
+use stone_prover_sdk::error::VerifierError;
 
 mod cli;
 mod commands;
@@ -16,6 +19,23 @@ enum CliError {
     Prove(#[from] RunError),
     #[error(transparent)]
     Verify(#[from] VerifierError),
+}
+
+fn format_log(buf: &mut Formatter, record: &Record) -> io::Result<()> {
+    let level_style = buf.default_level_style(record.level());
+    writeln!(
+        buf,
+        "{level_style}{:<5}{level_style:#} {}",
+        record.level().to_string().to_lowercase(),
+        record.args()
+    )
+}
+
+fn setup_logging() {
+    env_logger::Builder::new()
+        .filter_level(LevelFilter::Info)
+        .format(format_log)
+        .init();
 }
 
 fn display_error(error: CliError) {
@@ -70,7 +90,7 @@ fn display_error(error: CliError) {
             }
         },
     };
-    println!("Error: {}", error_message);
+    error!("{}", error_message);
 }
 
 fn process_cli_command(command: Cli) -> Result<(), CliError> {
@@ -83,6 +103,8 @@ fn process_cli_command(command: Cli) -> Result<(), CliError> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    setup_logging();
+
     let command = Cli::parse();
     if let Err(e) = process_cli_command(command) {
         display_error(e);
