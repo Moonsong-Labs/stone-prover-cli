@@ -16,7 +16,8 @@ done
 echo "Installing Stone in ${INSTALL_DIR}..."
 mkdir -p "${INSTALL_DIR}"
 wget https://github.com/Moonsong-Labs/stone-prover-cli/releases/download/${VERSION}/${TARBALL} -O "${INSTALL_DIR}/${TARBALL}"
-tar -xf "${INSTALL_DIR}/${TARBALL}"
+tar -xf "${INSTALL_DIR}/${TARBALL}" -C "${INSTALL_DIR}"
+rm "${INSTALL_DIR}/${TARBALL}"
 
 echo "Configuring permissions..."
 chmod +x "${INSTALL_DIR}/cpu_air_prover"
