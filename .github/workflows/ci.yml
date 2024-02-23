@@ -46,6 +46,9 @@ jobs:
           key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
           restore-keys: ${{ runner.os }}-cargo-
 
+      - name: Cargo fmt
+        run: cargo fmt --check
+
       - name: Set Stone SDK version in context
         id: set-env-sdk-version
         run: |
