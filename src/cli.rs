@@ -47,14 +47,14 @@ impl ProveArgs {
                     ErrorKind::ArgumentConflict,
                     "Cannot load program input in bootloader mode",
                 )
-                    .exit();
+                .exit();
             }
         } else if self.programs.len() > 1 {
             cmd.error(
                 ErrorKind::ArgumentConflict,
                 "Cannot prove multiple programs without bootloader",
             )
-                .exit();
+            .exit();
         }
 
         let executable = match self.with_bootloader {

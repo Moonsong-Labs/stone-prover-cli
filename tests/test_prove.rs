@@ -108,7 +108,7 @@ fn execute_and_prove_program(
         prover_parameters,
         Some(proof_file.as_path()),
     )
-        .expect("Command should succeed");
+    .expect("Command should succeed");
 
     assert!(
         result.status.success(),
@@ -144,7 +144,7 @@ fn execute_and_prove_program_l1_verifier(#[from(cli_in_path)] _path: ()) {
         None,
         Some(proof_file.as_path()),
     )
-        .expect("Command should succeed");
+    .expect("Command should succeed");
 
     println!(
         "stdout: {}\n\n\nstderr: {}",
@@ -190,7 +190,7 @@ fn execute_and_prove_program_with_bootloader(#[from(cli_in_path)] _path: ()) {
         None,
         Some(proof_file.as_path()),
     )
-        .expect("Command should succeed");
+    .expect("Command should succeed");
 
     assert!(
         result.status.success(),
@@ -223,7 +223,7 @@ fn execute_and_prove_pie_with_bootloader(#[from(cli_in_path)] _path: ()) {
         None,
         Some(proof_file.as_path()),
     )
-        .expect("Command should succeed");
+    .expect("Command should succeed");
 
     assert!(
         result.status.success(),
