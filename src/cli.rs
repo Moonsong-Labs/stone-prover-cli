@@ -28,7 +28,7 @@ pub struct ProveArgs {
     #[clap(flatten)]
     pub config: ConfigArgs,
 
-    #[arg(required=true, num_args=1..)]
+    #[arg(required = true, num_args = 1..)]
     pub programs: Vec<PathBuf>,
 }
 
@@ -55,6 +55,7 @@ impl ProveArgs {
             let args = ProveWithBootloaderArgs {
                 programs: self.programs,
                 config: self.config,
+                layout: self.layout,
             };
             return ProveCommand::WithBootloader(args);
         }
@@ -100,6 +101,9 @@ pub struct ProveBareArgs {
 #[derive(Args, Debug)]
 pub struct ProveWithBootloaderArgs {
     pub programs: Vec<PathBuf>,
+
+    #[clap(long = "layout")]
+    pub layout: Option<Layout>,
 
     #[clap(flatten)]
     pub config: ConfigArgs,

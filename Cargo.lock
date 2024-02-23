@@ -447,7 +447,7 @@ dependencies = [
 [[package]]
 name = "cairo-vm"
 version = "1.0.0-rc0"
-source = "git+https://github.com/Moonsong-Labs/cairo-vm?rev=b2f69d230416129a84ad8237ccc13d088992f74b#b2f69d230416129a84ad8237ccc13d088992f74b"
+source = "git+https://github.com/Moonsong-Labs/cairo-vm?rev=e0a4653aa5634664a3f792b38715a572e9f89b44#e0a4653aa5634664a3f792b38715a572e9f89b44"
 dependencies = [
  "anyhow",
  "bincode",
@@ -3455,7 +3455,7 @@ dependencies = [
 [[package]]
 name = "stone-prover-sdk"
 version = "0.1.0"
-source = "git+https://github.com/Moonsong-Labs/stone-prover-sdk?tag=v0.3.0#d5926ea42b607bd3efddc6129600ab3a977d7388"
+source = "git+https://github.com/Moonsong-Labs/stone-prover-sdk?rev=e38435cad3d906f1169979947204fff87aa328e1#e38435cad3d906f1169979947204fff87aa328e1"
 dependencies = [
  "bincode",
  "cairo-vm",
