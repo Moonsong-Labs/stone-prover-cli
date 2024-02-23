@@ -101,7 +101,7 @@ pub fn run_with_bootloader(
     let bootloader = Program::from_bytes(BOOTLOADER_PROGRAM, Some("main"))
         .map_err(RunError::FailedToLoadBootloader)?;
     let tasks: Result<Vec<TaskSpec>, RunError> = executables
-        .into_iter()
+        .iter()
         .map(|path| {
             task_from_file(path).map_err(|e| match e {
                 TaskError::Pie(e) => RunError::FailedToLoadPie(path.to_path_buf(), e),
@@ -116,7 +116,7 @@ pub fn run_with_bootloader(
         Some(layout),
         Some(allow_missing_builtins),
     )
-    .map_err(|e| e.into())
+        .map_err(|e| e.into())
 }
 
 pub fn prove(command: ProveCommand) -> Result<(), RunError> {
