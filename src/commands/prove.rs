@@ -55,9 +55,11 @@ pub enum RunError {
 
 pub fn run_program(args: ProveBareArgs) -> Result<ExecutionArtifacts, RunError> {
     let layout = args.layout.unwrap_or(Layout::StarknetWithKeccak);
+    let allow_missing_builtins = false;
 
     let program = std::fs::read(&args.program).map_err(|e| RunError::Io(args.program, e))?;
-    let (runner, vm) = run_in_proof_mode(&program, layout).map_err(ExecutionError::RunFailed)?;
+    let (runner, vm) = run_in_proof_mode(&program, layout, Some(allow_missing_builtins))
+        .map_err(ExecutionError::RunFailed)?;
     extract_execution_artifacts(runner, vm).map_err(|e| e.into())
 }
 
@@ -90,6 +92,8 @@ fn task_from_file(file: &Path) -> Result<TaskSpec, TaskError> {
 }
 
 pub fn run_with_bootloader(args: ProveWithBootloaderArgs) -> Result<ExecutionArtifacts, RunError> {
+    let layout = args.layout.unwrap_or(Layout::StarknetWithKeccak);
+    let allow_missing_builtins = false;
     let bootloader = Program::from_bytes(BOOTLOADER_PROGRAM, Some("main"))
         .map_err(RunError::FailedToLoadBootloader)?;
     let tasks: Result<Vec<TaskSpec>, RunError> = args
@@ -103,7 +107,13 @@ pub fn run_with_bootloader(args: ProveWithBootloaderArgs) -> Result<ExecutionArt
         })
         .collect();
     let tasks = tasks?;
-    run_bootloader_in_proof_mode(&bootloader, tasks).map_err(|e| e.into())
+    run_bootloader_in_proof_mode(
+        &bootloader,
+        tasks,
+        Some(layout),
+        Some(allow_missing_builtins),
+    )
+    .map_err(|e| e.into())
 }
 
 pub fn prove(command: ProveCommand) -> Result<(), RunError> {
