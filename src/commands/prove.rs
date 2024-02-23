@@ -116,7 +116,7 @@ pub fn run_with_bootloader(
         Some(layout),
         Some(allow_missing_builtins),
     )
-        .map_err(|e| e.into())
+    .map_err(|e| e.into())
 }
 
 pub fn prove(command: ProveCommand) -> Result<(), RunError> {
