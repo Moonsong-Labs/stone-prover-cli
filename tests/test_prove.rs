@@ -3,7 +3,7 @@ use std::path::Path;
 use cairo_vm::air_private_input::{AirPrivateInput, AirPrivateInputSerializable};
 use rstest::rstest;
 use stone_prover_sdk::json::read_json_from_file;
-use stone_prover_sdk::models::Proof;
+use stone_prover_sdk::models::{Proof, Verifier};
 
 use crate::common::cli_in_path;
 
@@ -11,8 +11,8 @@ mod common;
 
 fn invoke_cli(
     with_bootloader: bool,
-    programs: &[&Path],
-    program_input: Option<&Path>,
+    executables: &[&Path],
+    verifier: Option<Verifier>,
     prover_config: Option<&Path>,
     prover_parameters: Option<&Path>,
     output_file: Option<&Path>,
@@ -24,12 +24,12 @@ fn invoke_cli(
     if with_bootloader {
         command.arg("--with-bootloader");
     }
-    for program in programs {
-        command.arg(*program);
+    for executable in executables {
+        command.arg(*executable);
     }
 
-    if let Some(input_file) = program_input {
-        command.arg("--program-input").arg(input_file);
+    if let Some(verifier) = verifier {
+        command.arg("--verifier").arg(verifier.to_string());
     }
     if let Some(config_file) = prover_config {
         command.arg("--prover-config-file").arg(config_file);
@@ -121,6 +121,52 @@ fn execute_and_prove_program(
     let proof: Proof = read_json_from_file(proof_file).unwrap();
     let expected_proof: Proof = read_json_from_file(expected_proof).unwrap();
     assert_proof_eq(proof, expected_proof);
+}
+
+#[rstest]
+fn execute_and_prove_program_l1_verifier(#[from(cli_in_path)] _path: ()) {
+    let output_dir = tempfile::tempdir().unwrap();
+    let proof_file = output_dir.path().join("proof.json");
+
+    // Sanity check
+    assert!(!proof_file.exists());
+
+    let test_case_dir =
+        Path::new(env!("CARGO_MANIFEST_DIR")).join("dependencies/cairo-programs/cairo0/fibonacci");
+
+    let program = test_case_dir.join("fibonacci.json");
+
+    let result = invoke_cli(
+        false,
+        &vec![program.as_path()],
+        Some(Verifier::L1),
+        None,
+        None,
+        Some(proof_file.as_path()),
+    )
+    .expect("Command should succeed");
+
+    println!(
+        "stdout: {}\n\n\nstderr: {}",
+        String::from_utf8_lossy(&result.stdout),
+        String::from_utf8_lossy(&result.stderr)
+    );
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+
+    assert!(proof_file.exists());
+
+    let proof: Proof = read_json_from_file(proof_file).unwrap();
+    // TODO: test with L1 verifier
+    // Check that the FRI steps are compatible with the L1 verifier
+    assert_eq!(
+        proof.proof_parameters.stark.fri.fri_step_list,
+        vec![0, 2, 2, 2, 2, 2, 2, 2]
+    );
+    assert_eq!(proof.proof_parameters.stark.fri.last_layer_degree_bound, 32);
 }
 
 #[rstest]

@@ -17,7 +17,7 @@ use stone_prover_sdk::fri::generate_prover_parameters;
 use stone_prover_sdk::models::{Layout, ProverConfig};
 use stone_prover_sdk::prover::run_prover;
 
-use crate::cli::{ProveBareArgs, ProveCommand, ProveWithBootloaderArgs};
+use crate::cli::{Executable, ProveCommand};
 use crate::toolkit::json::{read_json_from_file, ReadJsonError};
 
 const BOOTLOADER_PROGRAM: &[u8] =
@@ -53,11 +53,13 @@ pub enum RunError {
     Prover(#[from] ProverError),
 }
 
-pub fn run_program(args: ProveBareArgs) -> Result<ExecutionArtifacts, RunError> {
-    let layout = args.layout.unwrap_or(Layout::StarknetWithKeccak);
-    let allow_missing_builtins = false;
-
-    let program = std::fs::read(&args.program).map_err(|e| RunError::Io(args.program, e))?;
+pub fn run_program(
+    program_path: PathBuf,
+    layout: Layout,
+    allow_missing_builtins: bool,
+) -> Result<ExecutionArtifacts, RunError> {
+    let program =
+        std::fs::read(program_path.as_path()).map_err(|e| RunError::Io(program_path, e))?;
     let (runner, vm) = run_in_proof_mode(&program, layout, Some(allow_missing_builtins))
         .map_err(ExecutionError::RunFailed)?;
     extract_execution_artifacts(runner, vm).map_err(|e| e.into())
@@ -91,18 +93,19 @@ fn task_from_file(file: &Path) -> Result<TaskSpec, TaskError> {
     Ok(TaskSpec { task })
 }
 
-pub fn run_with_bootloader(args: ProveWithBootloaderArgs) -> Result<ExecutionArtifacts, RunError> {
-    let layout = args.layout.unwrap_or(Layout::StarknetWithKeccak);
-    let allow_missing_builtins = false;
+pub fn run_with_bootloader(
+    executables: &[PathBuf],
+    layout: Layout,
+    allow_missing_builtins: bool,
+) -> Result<ExecutionArtifacts, RunError> {
     let bootloader = Program::from_bytes(BOOTLOADER_PROGRAM, Some("main"))
         .map_err(RunError::FailedToLoadBootloader)?;
-    let tasks: Result<Vec<TaskSpec>, RunError> = args
-        .programs
-        .into_iter()
-        .map(|path_buf| {
-            task_from_file(path_buf.as_path()).map_err(|e| match e {
-                TaskError::Pie(e) => RunError::FailedToLoadPie(path_buf, e),
-                TaskError::Program(e) => RunError::FailedToLoadProgram(path_buf, e),
+    let tasks: Result<Vec<TaskSpec>, RunError> = executables
+        .iter()
+        .map(|path| {
+            task_from_file(path).map_err(|e| match e {
+                TaskError::Pie(e) => RunError::FailedToLoadPie(path.to_path_buf(), e),
+                TaskError::Program(e) => RunError::FailedToLoadProgram(path.to_path_buf(), e),
             })
         })
         .collect();
@@ -120,7 +123,7 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
     debug!("preparing config files...");
 
     // Cloning here is the easiest solution to avoid borrow checks.
-    let config_args = command.config().clone();
+    let config_args = command.config.clone();
 
     let user_prover_config = config_args
         .prover_config_file
@@ -136,15 +139,18 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
         .transpose()?;
 
     info!("execution in progress...");
-    let execution_artifacts = match command {
-        ProveCommand::Bare(args) => run_program(args)?,
-        ProveCommand::WithBootloader(args) => run_with_bootloader(args)?,
+    let execution_artifacts = match command.executable {
+        Executable::BareMetal(program_path) => {
+            run_program(program_path, command.layout, command.allow_missing_builtins)?
+        }
+        Executable::WithBootloader(executables) => {
+            run_with_bootloader(&executables, command.layout, command.allow_missing_builtins)?
+        }
     };
 
-    let last_layer_degree_bound = 64;
     let prover_parameters = user_prover_parameters.unwrap_or(generate_prover_parameters(
         execution_artifacts.public_input.n_steps,
-        last_layer_degree_bound,
+        command.verifier,
     ));
 
     info!("proving in progress...");

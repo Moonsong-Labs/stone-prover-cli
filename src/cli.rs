@@ -1,8 +1,8 @@
 use clap::error::ErrorKind;
-use clap::{Args, CommandFactory, Parser, Subcommand};
+use clap::{Args, CommandFactory, Parser};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
-use stone_prover_sdk::models::Layout;
+use stone_prover_sdk::models::{Layout, Verifier};
 
 #[derive(Parser, Debug)]
 #[command(name = "stone")]
@@ -24,6 +24,12 @@ pub struct ProveArgs {
 
     #[clap(long = "layout")]
     pub layout: Option<Layout>,
+
+    #[clap(long = "verifier")]
+    pub verifier: Option<Verifier>,
+
+    #[clap(long = "allow-missing-builtins", action)]
+    pub allow_missing_builtins: bool,
 
     #[clap(flatten)]
     pub config: ConfigArgs,
@@ -51,62 +57,36 @@ impl ProveArgs {
             .exit();
         }
 
-        if self.with_bootloader {
-            let args = ProveWithBootloaderArgs {
-                programs: self.programs,
-                config: self.config,
-                layout: self.layout,
-            };
-            return ProveCommand::WithBootloader(args);
-        }
-        let args = ProveBareArgs {
-            program: self.programs.remove(0),
-            program_input: self.program_input,
-            layout: self.layout,
-            config: self.config,
+        let executable = match self.with_bootloader {
+            true => Executable::WithBootloader(self.programs),
+            false => Executable::BareMetal(self.programs.remove(0)),
         };
-        ProveCommand::Bare(args)
-    }
-}
+        let layout = self.layout.unwrap_or(Layout::StarknetWithKeccak);
+        let verifier = self.verifier.unwrap_or(Verifier::Stone);
 
-#[derive(Subcommand, Debug)]
-pub enum ProveCommand {
-    Bare(ProveBareArgs),
-    WithBootloader(ProveWithBootloaderArgs),
-}
-
-impl ProveCommand {
-    pub fn config(&self) -> &ConfigArgs {
-        match self {
-            ProveCommand::Bare(args) => &args.config,
-            ProveCommand::WithBootloader(args) => &args.config,
+        ProveCommand {
+            executable,
+            config: self.config,
+            layout,
+            verifier,
+            allow_missing_builtins: self.allow_missing_builtins,
         }
     }
 }
 
-#[derive(Args, Debug)]
-pub struct ProveBareArgs {
-    pub program: PathBuf,
-
-    #[clap(long = "program-input")]
-    pub program_input: Option<PathBuf>,
-
-    #[clap(long = "layout")]
-    pub layout: Option<Layout>,
-
-    #[clap(flatten)]
+#[derive(Debug, Clone)]
+pub struct ProveCommand {
+    pub executable: Executable,
     pub config: ConfigArgs,
+    pub layout: Layout,
+    pub verifier: Verifier,
+    pub allow_missing_builtins: bool,
 }
 
-#[derive(Args, Debug)]
-pub struct ProveWithBootloaderArgs {
-    pub programs: Vec<PathBuf>,
-
-    #[clap(long = "layout")]
-    pub layout: Option<Layout>,
-
-    #[clap(flatten)]
-    pub config: ConfigArgs,
+#[derive(Debug, Clone)]
+pub enum Executable {
+    BareMetal(PathBuf),
+    WithBootloader(Vec<PathBuf>),
 }
 
 #[derive(Args, Clone, Debug)]
