@@ -97,6 +97,7 @@ pub fn run_with_bootloader(
     executables: &[PathBuf],
     layout: Layout,
     allow_missing_builtins: bool,
+    fact_topologies_path: Option<PathBuf>,
 ) -> Result<ExecutionArtifacts, RunError> {
     let bootloader = Program::from_bytes(BOOTLOADER_PROGRAM, Some("main"))
         .map_err(RunError::FailedToLoadBootloader)?;
@@ -115,6 +116,7 @@ pub fn run_with_bootloader(
         tasks,
         Some(layout),
         Some(allow_missing_builtins),
+        fact_topologies_path,
     )
     .map_err(|e| e.into())
 }
@@ -143,9 +145,12 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
         Executable::BareMetal(program_path) => {
             run_program(program_path, command.layout, command.allow_missing_builtins)?
         }
-        Executable::WithBootloader(executables) => {
-            run_with_bootloader(&executables, command.layout, command.allow_missing_builtins)?
-        }
+        Executable::WithBootloader(executables) => run_with_bootloader(
+            &executables,
+            command.layout,
+            command.allow_missing_builtins,
+            command.config.fact_topologies_file,
+        )?,
     };
 
     let prover_parameters = user_prover_parameters.unwrap_or(generate_prover_parameters(
