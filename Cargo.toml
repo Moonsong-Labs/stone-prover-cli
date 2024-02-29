@@ -12,7 +12,7 @@ env_logger = { version = "0.11.2", features = ["color"] }
 log = "0.4.20"
 serde = { version = "1.0.196", features = ["derive"] }
 serde_json = { version = "1.0.113" }
-stone-prover-sdk = { git = "https://github.com/Moonsong-Labs/stone-prover-sdk", rev = "4e86b70f245f02b8a76c7d7ad0ce93fe7f9a3400" }
+stone-prover-sdk = { git = "https://github.com/Moonsong-Labs/stone-prover-sdk", rev = "9b310ed00fa66365900737847f9d57ece3e14ffe" }
 thiserror = { version = "1.0.57" }
 
 [dev-dependencies]

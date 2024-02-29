@@ -38,12 +38,21 @@ pub struct ProveArgs {
 impl ProveArgs {
     pub fn command(mut self) -> ProveCommand {
         let mut cmd = Cli::command();
-        if !self.with_bootloader && self.programs.len() > 1 {
-            cmd.error(
-                ErrorKind::ArgumentConflict,
-                "Cannot prove multiple programs without bootloader",
-            )
-            .exit();
+        if !self.with_bootloader {
+            if self.config.fact_topologies_file.is_some() {
+                cmd.error(
+                    ErrorKind::ArgumentConflict,
+                    "Cannot specify fact topologies file in no-bootloader mode",
+                )
+                .exit();
+            }
+            if self.programs.len() > 1 {
+                cmd.error(
+                    ErrorKind::ArgumentConflict,
+                    "Cannot prove multiple programs in no-bootloader mode",
+                )
+                .exit();
+            }
         }
 
         let executable = match self.with_bootloader {
@@ -85,7 +94,9 @@ pub struct ConfigArgs {
     #[clap(long = "parameter-file")]
     pub parameter_file: Option<PathBuf>,
     #[clap(long = "output-file")]
-    output_file: Option<PathBuf>,
+    pub output_file: Option<PathBuf>,
+    #[clap(long = "fact-topologies-file")]
+    pub fact_topologies_file: Option<PathBuf>,
 }
 
 impl ConfigArgs {
