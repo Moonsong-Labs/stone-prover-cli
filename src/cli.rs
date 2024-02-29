@@ -43,7 +43,7 @@ impl ProveArgs {
                 ErrorKind::ArgumentConflict,
                 "Cannot prove multiple programs without bootloader",
             )
-                .exit();
+            .exit();
         }
 
         let executable = match self.with_bootloader {
