@@ -2,7 +2,7 @@
 
 set -eo pipefail
 
-VERSION="v0.1.1"
+VERSION="v0.2.0"
 INSTALL_DIR="${HOME}/.stone/${VERSION}"
 TARBALL="stone-cli-linux-x86-64.tar.gz"
 
