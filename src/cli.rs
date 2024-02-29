@@ -19,9 +19,6 @@ pub struct ProveArgs {
     #[clap(long = "with-bootloader", default_value_t = false)]
     pub with_bootloader: bool,
 
-    #[clap(long = "program-input")]
-    pub program_input: Option<PathBuf>,
-
     #[clap(long = "layout")]
     pub layout: Option<Layout>,
 
@@ -41,20 +38,12 @@ pub struct ProveArgs {
 impl ProveArgs {
     pub fn command(mut self) -> ProveCommand {
         let mut cmd = Cli::command();
-        if self.with_bootloader {
-            if self.program_input.is_some() {
-                cmd.error(
-                    ErrorKind::ArgumentConflict,
-                    "Cannot load program input in bootloader mode",
-                )
-                .exit();
-            }
-        } else if self.programs.len() > 1 {
+        if !self.with_bootloader && self.programs.len() > 1 {
             cmd.error(
                 ErrorKind::ArgumentConflict,
                 "Cannot prove multiple programs without bootloader",
             )
-            .exit();
+                .exit();
         }
 
         let executable = match self.with_bootloader {
