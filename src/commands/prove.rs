@@ -138,7 +138,7 @@ pub fn run_with_bootloader(
         Some(allow_missing_builtins),
         fact_topologies_path,
     )
-        .map_err(|e| e.into())
+    .map_err(|e| e.into())
 }
 
 pub fn prove(command: ProveCommand) -> Result<(), RunError> {

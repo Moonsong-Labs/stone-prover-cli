@@ -81,21 +81,21 @@ impl ProveArgs {
                     ErrorKind::ArgumentConflict,
                     "Cannot specify fact topologies file in no-bootloader mode",
                 )
-                    .exit();
+                .exit();
             }
             if self.bootloader.is_some() {
                 cmd.error(
                     ErrorKind::ArgumentConflict,
                     "Cannot specify bootloader version in no-bootloader mode",
                 )
-                    .exit();
+                .exit();
             }
             if self.programs.len() > 1 {
                 cmd.error(
                     ErrorKind::ArgumentConflict,
                     "Cannot prove multiple programs in no-bootloader mode",
                 )
-                    .exit();
+                .exit();
             }
         }
 
