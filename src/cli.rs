@@ -2,6 +2,7 @@ use clap::error::ErrorKind;
 use clap::{Args, CommandFactory, Parser};
 use std::borrow::Cow;
 use std::path::{Path, PathBuf};
+use std::str::FromStr;
 use stone_prover_sdk::models::{Layout, Verifier};
 
 #[derive(Parser, Debug)]
@@ -12,12 +13,48 @@ pub enum Cli {
     Verify(VerifyArgs),
 }
 
+#[derive(Debug, Clone)]
+pub enum Bootloader {
+    V0_12_3,
+    V0_13_0,
+    Custom(PathBuf),
+}
+
+impl Bootloader {
+    pub fn latest() -> Self {
+        Self::V0_13_0
+    }
+    pub fn latest_compatible(verifier: &Verifier) -> Self {
+        match verifier {
+            Verifier::Stone => Self::latest(),
+            Verifier::L1 => Self::V0_12_3,
+        }
+    }
+}
+
+impl FromStr for Bootloader {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let bootloader = match s {
+            "0.12.3" => Self::V0_12_3,
+            "0.13.0" => Self::V0_13_0,
+            path => Self::Custom(PathBuf::from(path)),
+        };
+
+        Ok(bootloader)
+    }
+}
+
 #[derive(Args, Debug)]
 #[command(args_conflicts_with_subcommands = true)]
 #[command(flatten_help = true)]
 pub struct ProveArgs {
     #[clap(long = "with-bootloader", default_value_t = false)]
     pub with_bootloader: bool,
+
+    #[clap(long = "bootloader-version")]
+    bootloader: Option<Bootloader>,
 
     #[clap(long = "layout")]
     pub layout: Option<Layout>,
@@ -46,6 +83,13 @@ impl ProveArgs {
                 )
                 .exit();
             }
+            if self.bootloader.is_some() {
+                cmd.error(
+                    ErrorKind::ArgumentConflict,
+                    "Cannot specify bootloader version in no-bootloader mode",
+                )
+                .exit();
+            }
             if self.programs.len() > 1 {
                 cmd.error(
                     ErrorKind::ArgumentConflict,
@@ -55,12 +99,19 @@ impl ProveArgs {
             }
         }
 
-        let executable = match self.with_bootloader {
-            true => Executable::WithBootloader(self.programs),
-            false => Executable::BareMetal(self.programs.remove(0)),
-        };
         let layout = self.layout.unwrap_or(Layout::StarknetWithKeccak);
         let verifier = self.verifier.unwrap_or(Verifier::Stone);
+
+        let executable = match self.with_bootloader {
+            true => {
+                let bootloader = match self.bootloader {
+                    Some(version) => version,
+                    None => Bootloader::latest_compatible(&verifier),
+                };
+                Executable::WithBootloader(bootloader, self.programs)
+            }
+            false => Executable::BareMetal(self.programs.remove(0)),
+        };
 
         ProveCommand {
             executable,
@@ -84,7 +135,7 @@ pub struct ProveCommand {
 #[derive(Debug, Clone)]
 pub enum Executable {
     BareMetal(PathBuf),
-    WithBootloader(Vec<PathBuf>),
+    WithBootloader(Bootloader, Vec<PathBuf>),
 }
 
 #[derive(Args, Clone, Debug)]

@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
@@ -17,16 +18,35 @@ use stone_prover_sdk::fri::generate_prover_parameters;
 use stone_prover_sdk::models::{Layout, ProverConfig};
 use stone_prover_sdk::prover::run_prover;
 
-use crate::cli::{Executable, ProveCommand};
+use crate::cli::{Bootloader, Executable, ProveCommand};
 use crate::toolkit::json::{read_json_from_file, ReadJsonError};
 
-const BOOTLOADER_PROGRAM: &[u8] =
+const BOOTLOADER_V0_12_3: &[u8] =
+    include_bytes!("../../dependencies/cairo-programs/bootloader/bootloader-v0.12.3.json");
+
+const BOOTLOADER_V0_13_0: &[u8] =
     include_bytes!("../../dependencies/cairo-programs/bootloader/bootloader-v0.13.0.json");
 
 fn write_json_to_file<T: Serialize, P: AsRef<Path>>(obj: T, path: P) -> Result<(), std::io::Error> {
     let mut file = File::create(path)?;
     serde_json::to_writer(&mut file, &obj)?;
     Ok(())
+}
+
+fn load_bootloader(bootloader: Bootloader) -> Result<Program, RunError> {
+    let bootloader_bytes = match bootloader {
+        Bootloader::V0_12_3 => Cow::Borrowed(BOOTLOADER_V0_12_3),
+        Bootloader::V0_13_0 => Cow::Borrowed(BOOTLOADER_V0_13_0),
+        Bootloader::Custom(path) => {
+            let content = std::fs::read(&path).map_err(|e| RunError::Io(path, e))?;
+            Cow::Owned(content)
+        }
+    };
+
+    let bootloader_program = Program::from_bytes(bootloader_bytes.as_ref(), Some("main"))
+        .map_err(RunError::FailedToLoadBootloader)?;
+
+    Ok(bootloader_program)
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -94,13 +114,13 @@ fn task_from_file(file: &Path) -> Result<TaskSpec, TaskError> {
 }
 
 pub fn run_with_bootloader(
+    bootloader: Bootloader,
     executables: &[PathBuf],
     layout: Layout,
     allow_missing_builtins: bool,
     fact_topologies_path: Option<PathBuf>,
 ) -> Result<ExecutionArtifacts, RunError> {
-    let bootloader = Program::from_bytes(BOOTLOADER_PROGRAM, Some("main"))
-        .map_err(RunError::FailedToLoadBootloader)?;
+    let bootloader_program = load_bootloader(bootloader)?;
     let tasks: Result<Vec<TaskSpec>, RunError> = executables
         .iter()
         .map(|path| {
@@ -112,7 +132,7 @@ pub fn run_with_bootloader(
         .collect();
     let tasks = tasks?;
     run_bootloader_in_proof_mode(
-        &bootloader,
+        &bootloader_program,
         tasks,
         Some(layout),
         Some(allow_missing_builtins),
@@ -145,7 +165,8 @@ pub fn prove(command: ProveCommand) -> Result<(), RunError> {
         Executable::BareMetal(program_path) => {
             run_program(program_path, command.layout, command.allow_missing_builtins)?
         }
-        Executable::WithBootloader(executables) => run_with_bootloader(
+        Executable::WithBootloader(bootloader, executables) => run_with_bootloader(
+            bootloader,
             &executables,
             command.layout,
             command.allow_missing_builtins,
