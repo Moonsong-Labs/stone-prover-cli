@@ -1,4 +1,5 @@
 use crate::cli::Cli;
+use crate::commands::hash::HashError;
 use crate::commands::prove::RunError;
 use cairo_vm::vm::errors::cairo_run_errors::CairoRunError;
 use clap::Parser;
@@ -15,6 +16,8 @@ mod toolkit;
 
 #[derive(thiserror::Error, Debug)]
 enum CliError {
+    #[error(transparent)]
+    Hash(#[from] HashError),
     #[error(transparent)]
     Prove(#[from] RunError),
     #[error(transparent)]
@@ -40,6 +43,7 @@ fn setup_logging() {
 
 fn display_error(error: CliError) {
     let error_message = match error {
+        CliError::Hash(hash_error) => hash_error.to_string(),
         CliError::Prove(run_error) => match run_error {
             RunError::Io(path_buf, io_error) => {
                 format!("could not read {}: {io_error}.", path_buf.to_string_lossy())
@@ -95,6 +99,7 @@ fn display_error(error: CliError) {
 
 fn process_cli_command(command: Cli) -> Result<(), CliError> {
     match command {
+        Cli::Hash(hash_args) => commands::hash(hash_args.program)?,
         Cli::Prove(prove_args) => commands::prove(prove_args.command())?,
         Cli::Verify(verify_args) => commands::verify(verify_args)?,
     };

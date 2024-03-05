@@ -3447,6 +3447,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "starknet-crypto",
  "stone-prover-sdk",
  "tempfile",
  "thiserror",

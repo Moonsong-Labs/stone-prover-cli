@@ -9,6 +9,7 @@ use stone_prover_sdk::models::{Layout, Verifier};
 #[command(name = "stone")]
 #[command(bin_name = "stone")]
 pub enum Cli {
+    Hash(HashArgs),
     Prove(ProveArgs),
     Verify(VerifyArgs),
 }
@@ -44,6 +45,11 @@ impl FromStr for Bootloader {
 
         Ok(bootloader)
     }
+}
+
+#[derive(Args, Debug)]
+pub struct HashArgs {
+    pub program: PathBuf,
 }
 
 #[derive(Args, Debug)]
