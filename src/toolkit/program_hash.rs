@@ -21,7 +21,7 @@ pub enum ProgramHashError {
     HashChain(#[from] HashChainError),
 
     #[error(
-    "Invalid program builtin: builtin name too long to be converted to field element: {0}"
+        "Invalid program builtin: builtin name too long to be converted to field element: {0}"
     )]
     InvalidProgramBuiltin(&'static str),
 
@@ -45,8 +45,8 @@ fn compute_hash_chain<'a, I>(
     data: I,
     hash_func: HashFunction,
 ) -> Result<FieldElement, HashChainError>
-    where
-        I: Iterator<Item=&'a FieldElement> + DoubleEndedIterator,
+where
+    I: Iterator<Item = &'a FieldElement> + DoubleEndedIterator,
 {
     match data.copied().rev().reduce(|x, y| hash_func(&y, &x)) {
         Some(result) => Ok(result),
