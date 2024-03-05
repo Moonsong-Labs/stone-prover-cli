@@ -20,6 +20,7 @@ use stone_prover_sdk::prover::run_prover;
 
 use crate::cli::{Bootloader, Executable, ProveCommand};
 use crate::toolkit::json::{read_json_from_file, ReadJsonError};
+use crate::toolkit::zip::is_zip_file;
 
 const BOOTLOADER_V0_12_3: &[u8] =
     include_bytes!("../../dependencies/cairo-programs/bootloader/bootloader-v0.12.3.json");
@@ -83,13 +84,6 @@ pub fn run_program(
     let (runner, vm) = run_in_proof_mode(&program, layout, Some(allow_missing_builtins))
         .map_err(ExecutionError::RunFailed)?;
     extract_execution_artifacts(runner, vm).map_err(|e| e.into())
-}
-
-fn is_zip_file(file: &Path) -> bool {
-    match file.extension() {
-        Some(extension) => extension == "zip",
-        None => false,
-    }
 }
 
 #[derive(thiserror::Error, Debug)]
